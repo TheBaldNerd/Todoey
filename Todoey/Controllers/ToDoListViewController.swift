@@ -7,17 +7,27 @@
 //
 
 import UIKit
+import CoreData
+
+
 
 class ToDoListViewController: UITableViewController {
-
-let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    
+let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
 ////////////////////////
 //MARK:- Class variables
     
     var itemArray = [Item]()
     
-    let defaults = UserDefaults.standard
+    var selectedCategory : Category? {
+        
+        didSet {
+            
+            loadItems()
+            
+        }
+    }
     
 //////////////////////
 //MARK:- Start of main
@@ -25,12 +35,10 @@ let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDo
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        loadItems()
-
     }
     
-    /////////////////////////////////////
-    //MARK:- Tableview Datasourve Merhods
+/////////////////////////////////////
+//MARK:- Tableview Datasourve Methods
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
@@ -58,6 +66,9 @@ let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDo
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
+//        context.delete(itemArray[indexPath.row])
+//        itemArray.remove(at: indexPath.row)
+        
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
         saveItems()
@@ -71,38 +82,32 @@ let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDo
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         
-        // Set a texfield object for UIAlert
         var textField = UITextField()
         
-        // Set parameters for UIAlert
         let alert = UIAlertController(title: "Add New Todoey Item", message: "", preferredStyle: .alert)
         
-        // Set button type for UIAlert
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             
             // What will happen once the user clicks the add item button on our UIAlert
             
-            // Initialise new item
-            let newItem = Item()
-            
-            // Set the new item from textfield
+            let newItem = Item(context: self.context)
             newItem.title = textField.text!
+            newItem.done = false
+            newItem.parentCategory = self.selectedCategory
             
-            // Add new item to array
             self.itemArray.append(newItem)
             
-            // SAVE
             self.saveItems()
+        
+        }
         
         alert.addTextField { (alertTextField) in
             
             alertTextField.placeholder = "Crete new item"
             textField = alertTextField
             
-            }
         }
         
-        // Show UIAlert popup
         alert.addAction(action)
 
         present(alert, animated: true, completion: nil)
@@ -113,51 +118,89 @@ let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDo
         
     func saveItems() {
         
-        let encoder = PropertyListEncoder()
-        
         do {
             
-            let data = try encoder.encode(itemArray)
-            try data.write(to: dataFilePath!)
+            try context.save()
             
         } catch {
             
-            print("Error encoding item array, \(error)")
+            print("*** Error saving context: \(error)")
             
         }
         
         self.tableView.reloadData()
         
-        
-    }
+        }
     
-    func loadItems() {
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil) {
+        
+        // This function has an internal name request: and and external name 'with'
+        // It also has an optional input value - leaving blank will input Item.fetchRequest - IE ALL ARRAY
 
-        if let data = try? Data(contentsOf: dataFilePath!) {
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+
+        if let additionalPredicate = predicate {
             
-            let decoder = PropertyListDecoder()
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, additionalPredicate])
             
-            do {
-                itemArray = try decoder.decode([Item].self, from: data)
-                
-            } catch {
-                
-                print("Error in decoding file: \(error)")
-                
-            }
+        } else {
+            
+            request.predicate = categoryPredicate
+            
         }
         
         
+//        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, predicate])
+//
+//        request.predicate = compoundPredicate
+
+        do {
+            
+            itemArray = try context.fetch(request)
+            
+        } catch {
+            
+            print("*** Error fetching data from context: \(error)")
+            
+        }
+        
+        tableView.reloadData()
+    }
+
+}
+
+//MARK:- Search Bar Methods
+
+extension ToDoListViewController: UISearchBarDelegate {
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        // Searching 'title' entity thats CONTAINS the searchBar.text
+        // the [cd] means, no CASE and no DIACRITIC - IE é or å
+        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+        
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+        
+        loadItems(with: request, predicate: predicate)
+        
     }
     
-    
-    
-    
-    
-    
-    
-    
-    
+    func searchBar(_ searchBar: UISearchBar,
+      textDidChange searchText: String) {
+        
+        if searchBar.text?.count == 0 {
+            
+            loadItems()
+            
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+            
+            
+        }
+    }
     
     
     
@@ -167,4 +210,5 @@ let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDo
     
     
 }
+
 
