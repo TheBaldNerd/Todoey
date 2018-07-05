@@ -173,8 +173,7 @@ extension ToDoListViewController: UISearchBarDelegate {
         loadItems(with: request, predicate: predicate)
         
     }
-    
-    
+    //MARK: Clear the Searchbar when user clicks X
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
 
         if searchBar.text?.count == 0 {
@@ -189,12 +188,7 @@ extension ToDoListViewController: UISearchBarDelegate {
 
         }
     
-    
-    
-    
-    
     }
-    
     
 }
 
