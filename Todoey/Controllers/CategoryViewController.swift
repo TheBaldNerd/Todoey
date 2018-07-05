@@ -26,9 +26,6 @@ class CategoryViewController: UITableViewController {
                 
         // For Debugging and SQL Checking
         print("FILEPATH: \(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))")
-
-        //MARK: Add New Categories
-        
         
     }
 
