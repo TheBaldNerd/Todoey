@@ -13,16 +13,21 @@ class CategoryViewController: UITableViewController {
 
 //MARK:- Class variables
 
+    //MARK: Core Data
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
+    //MARK:- Normal Variables
     var categoryArray = [Category]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
 
         loadCategories()
-        
-        //MARK:- Add New Categories
+                
+        // For Debugging and SQL Checking
+        print("FILEPATH: \(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))")
+
+        //MARK: Add New Categories
         
         
     }
@@ -51,8 +56,6 @@ class CategoryViewController: UITableViewController {
 //MARK:- TableView Delegate Methods
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
-        tableView.deselectRow(at: indexPath, animated: true)
         
         performSegue(withIdentifier: "goToItems", sender: self)
         

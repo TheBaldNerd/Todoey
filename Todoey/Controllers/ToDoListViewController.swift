@@ -9,8 +9,6 @@
 import UIKit
 import CoreData
 
-
-
 class ToDoListViewController: UITableViewController {
     
 let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -29,16 +27,16 @@ let context = (UIApplication.shared.delegate as! AppDelegate).persistentContaine
         }
     }
     
-//////////////////////
 //MARK:- Start of main
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        tableView.reloadData()
+
     }
     
-/////////////////////////////////////
-//MARK:- Tableview Datasourve Methods
+//MARK:- Tableview Datasource Methods
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
@@ -61,8 +59,7 @@ let context = (UIApplication.shared.delegate as! AppDelegate).persistentContaine
         return itemArray.count
     }
     
-///////////////////////////////////
-//MARK - TableView Delegate Methods
+//MARK:- TableView Delegate Methods
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
@@ -77,7 +74,6 @@ let context = (UIApplication.shared.delegate as! AppDelegate).persistentContaine
         
     }
     
-////////////////////////
 //MARK:- - Add New Items
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
@@ -114,8 +110,9 @@ let context = (UIApplication.shared.delegate as! AppDelegate).persistentContaine
         
     }
     
-//MARK:- Model Manipulation Methods
-        
+    
+//MARK:- Core Data Manipulation
+
     func saveItems() {
         
         do {
@@ -134,9 +131,6 @@ let context = (UIApplication.shared.delegate as! AppDelegate).persistentContaine
     
     func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil) {
         
-        // This function has an internal name request: and and external name 'with'
-        // It also has an optional input value - leaving blank will input Item.fetchRequest - IE ALL ARRAY
-
         let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
 
         if let additionalPredicate = predicate {
@@ -149,36 +143,29 @@ let context = (UIApplication.shared.delegate as! AppDelegate).persistentContaine
             
         }
         
-        
-//        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate, predicate])
-//
-//        request.predicate = compoundPredicate
-
         do {
             
             itemArray = try context.fetch(request)
             
         } catch {
             
-            print("*** Error fetching data from context: \(error)")
+            print("Error fetching data from context \(error)")
             
         }
-        
         tableView.reloadData()
+        
     }
-
 }
 
-//MARK:- Search Bar Methods
 
 extension ToDoListViewController: UISearchBarDelegate {
     
+//MARK:- Search Bar Methods
+
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        
+
         let request : NSFetchRequest<Item> = Item.fetchRequest()
         
-        // Searching 'title' entity thats CONTAINS the searchBar.text
-        // the [cd] means, no CASE and no DIACRITIC - IE é or å
         let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
         
         request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
@@ -187,26 +174,26 @@ extension ToDoListViewController: UISearchBarDelegate {
         
     }
     
-    func searchBar(_ searchBar: UISearchBar,
-      textDidChange searchText: String) {
-        
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+
         if searchBar.text?.count == 0 {
-            
+
             loadItems()
-            
+
             DispatchQueue.main.async {
+                
                 searchBar.resignFirstResponder()
+                
             }
-            
-            
+
         }
+    
+    
+    
+    
+    
     }
-    
-    
-    
-    
-    
-    
     
     
 }
